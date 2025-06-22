@@ -80,6 +80,13 @@
             <a href="{{ route('lecturas.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Lecturas</a>
             <a href="{{ route('consumos.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Consumos</a>
             <a href="{{ route('usuarios.listado') }}" class="px-3 py-2 rounded-lg transition hover:bg-coral-100 hover:text-coral-700">Listado Usuarios</a>
+            <a href="{{ route('facturas.masiva') }}" class="px-3 py-2 rounded-lg transition hover:bg-coral-200 hover:text-coral-700">Facturación Masiva</a>
+            <a href="{{ route('creditos.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-green-100 hover:text-green-700">Créditos</a>
+            @if(Route::has('precios.index'))
+            <a href="{{ route('precios.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-yellow-100 hover:text-yellow-700">Precios</a>
+            @else
+            <span class="px-3 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed" title="Módulo no disponible">Precios</span>
+            @endif
         </div>
     </nav>
     <main class="flex-1 flex justify-center items-start py-10 px-2 bg-transparent">

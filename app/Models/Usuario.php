@@ -30,4 +30,9 @@ class Usuario extends Model
     {
         return $this->hasMany(Lectura::class, 'matricula', 'matricula');
     }
+
+    // Relación en Usuario para créditos
+    public function creditos() {
+        return $this->hasMany(\App\Models\Credito::class);
+    }
 }

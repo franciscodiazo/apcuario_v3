@@ -64,6 +64,9 @@
                         <li>
                             <a href="{{ route('usuarios.listado') }}" class="text-coral-700 underline hover:text-coral-900">Listado de Usuarios</a>
                         </li>
+                        <li>
+                            <a href="{{ route('facturas.masiva') }}" class="text-coral-700 underline hover:text-coral-900">Facturación Masiva</a>
+                        </li>
                     </ul>
                     <hr class="my-4">
                     <p class="text-sm text-[#706f6c] dark:text-[#A1A09A]">

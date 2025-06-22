@@ -51,3 +51,8 @@ Route::get('/api/lectura-anterior', function (\Illuminate\Http\Request $request)
 Route::get('consumos', [\App\Http\Controllers\ConsumoController::class, 'index'])->name('consumos.index');
 Route::post('consumos/{id}/pagar', [\App\Http\Controllers\ConsumoController::class, 'pagar'])->name('consumos.pagar');
 Route::get('consumos/{id}/recibo', [\App\Http\Controllers\ConsumoController::class, 'recibo'])->name('consumos.recibo');
+Route::get('facturas/masiva', [\App\Http\Controllers\FacturaMasivaController::class, 'index'])->name('facturas.masiva');
+
+// Rutas para créditos
+Route::get('/creditos', [App\Http\Controllers\CreditoController::class, 'index'])->name('creditos.index');
+Route::post('/creditos/abonar/{id}', [App\Http\Controllers\CreditoController::class, 'abonar'])->name('creditos.abonar');

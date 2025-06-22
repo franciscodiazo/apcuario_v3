@@ -8,17 +8,40 @@
             <div class="text-5xl font-bold text-coral-700 mb-2">{{ $usuariosCount }}</div>
             <div class="text-lg font-semibold text-coral-900">Usuarios registrados</div>
         </div>
-        <div class="md:col-span-2 bg-gradient-to-br from-aquarius-50 to-sand-100 rounded-2xl shadow-lg p-6">
-            <div class="text-lg font-semibold text-aquarius-800 mb-2">Último usuario registrado</div>
-            @if($ultimoUsuario)
-                <div class="flex flex-col md:flex-row md:items-center md:gap-4">
-                    <div class="text-xl font-bold text-aquarius-900">{{ $ultimoUsuario->nombres }} {{ $ultimoUsuario->apellidos }}</div>
-                    <div class="text-sm text-aquarius-600">Matrícula: {{ $ultimoUsuario->matricula }}</div>
-                    <div class="text-xs text-sand-700">Registrado: {{ $ultimoUsuario->created_at->format('Y-m-d H:i') }}</div>
-                </div>
-            @else
-                <div class="text-aquarius-400">No hay usuarios registrados.</div>
-            @endif
+        <div class="bg-gradient-to-br from-green-100 to-green-300 rounded-2xl shadow-lg p-6 flex flex-col items-center">
+            <div class="text-3xl font-bold text-green-700 mb-2">${{ number_format($pagosTotales, 0) }}</div>
+            <div class="text-lg font-semibold text-green-900">Total Recaudado</div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-100 to-blue-300 rounded-2xl shadow-lg p-6 flex flex-col items-center">
+            <div class="text-2xl font-bold text-blue-700 mb-2">{{ $pagosPorMetodo->sum('cantidad') }}</div>
+            <div class="text-lg font-semibold text-blue-900">Pagos realizados</div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="text-lg font-semibold text-aquarius-800 mb-2">Pagos por método</div>
+            <table class="min-w-full divide-y divide-aquarius-200">
+                <thead class="bg-aquarius-100">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">Método</th>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">Cantidad</th>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-aquarius-100">
+                    @foreach($pagosPorMetodo as $pago)
+                    <tr>
+                        <td class="px-4 py-2">{{ $pago->metodo_pago ?? 'Sin especificar' }}</td>
+                        <td class="px-4 py-2">{{ $pago->cantidad }}</td>
+                        <td class="px-4 py-2">${{ number_format($pago->total, 0) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="text-lg font-semibold text-aquarius-800 mb-2">Pagos por mes y año</div>
+            <canvas id="pagosMesChart" height="120"></canvas>
         </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -64,4 +87,31 @@
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const pagosMesData = @json($pagosPorMes);
+    const labels = pagosMesData.map(item => `${item.anio}-${String(item.mes).padStart(2,'0')}`);
+    const data = pagosMesData.map(item => item.total);
+    new Chart(document.getElementById('pagosMesChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Recaudo mensual',
+                data: data,
+                backgroundColor: '#00bcd4',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Recaudo por mes' }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
 @endsection

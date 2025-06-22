@@ -24,6 +24,21 @@
             @endfor
         </div>
     </div>
+    <div class="mb-6 flex justify-end gap-4 no-print">
+        <button onclick="imprimirIndividualDesdeListado()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-800 transition">Imprimir individual (PDF)</button>
+        <button onclick="exportarPDFPorBloques()" class="px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Exportar a PDF (5 facturas)</button>
+    </div>
+    <!-- Modal de impresión individual -->
+    <div id="modal-preview" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-[21cm] h-[28cm] flex flex-col relative border-4 border-coral-500">
+            <button onclick="closePreview()" class="absolute top-2 right-2 bg-coral-500 text-white rounded-full w-8 h-8 flex items-center justify-center">&times;</button>
+            <div class="text-lg font-bold text-coral-700 text-center mt-2 mb-2">Impresión individual de factura</div>
+            <div id="modal-factura-content" class="overflow-auto p-2" style="width:19.59cm; height:25.5cm; margin:auto; box-sizing:border-box; background:#fff;">
+                <!-- Aquí se inyectan las facturas -->
+            </div>
+            <button onclick="exportarPDFIndividual()" class="mt-2 mx-auto px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Imprimir individual (PDF)</button>
+        </div>
+    </div>
     <div class="print:bg-white print:p-0" id="facturas-area">
         @foreach($lecturas as $lectura)
         @php
@@ -37,6 +52,16 @@
             $maxBar = 100;
             $maxConsumo = max(1, $ultimas->max('consumo_m3'));
             $escala = $maxConsumo > $maxBar ? $maxBar / $maxConsumo : 1;
+            // Buscar créditos del usuario para mostrar en la factura
+            $creditoPendiente = $lectura->usuario ? $lectura->usuario->creditos()->where('saldo', '>', 0)->sum('saldo') : 0;
+            $creditos = $creditoPendiente; // Para usar en el detalle
+            // Total a pagar: consumo + cargo fijo - créditos (nunca menor a 0)
+            $totalPagar = max(0, ($costo + 5000) - $creditos);
+            // Facturas pendientes (si existen)
+            $totalPendientes = isset($pendientes) ? $pendientes->sum(function($p) use ($preciosPorAnio) {
+                $basePend = $preciosPorAnio[$p->anio]->costo_base ?? 22000;
+                return $basePend + 5000;
+            }) : 0;
         @endphp
         <div class="factura-servicio" style="width: 21.59cm; height: 27.94cm; margin: 0 auto 1.5cm auto; padding: 1.5cm; box-sizing: border-box; background: #fff; position: relative; page-break-after: always;">
             {{-- ENCABEZADO EMPRESA --}}
@@ -85,14 +110,31 @@
                 </div>
             </div>
             {{-- RESUMEN DE COBRO --}}
-            <div class="bg-cyan-50 border border-cyan-200 rounded p-2 mb-2 flex justify-between items-center">
-                <div>
-                    <div class="text-xs text-aquarius-700">Valor total a pagar</div>
-                    <div class="text-2xl font-bold text-coral-700">${{ number_format($costo, 0) }}</div>
+            <div class="bg-cyan-50 border border-cyan-200 rounded p-2 mb-2 flex flex-col gap-1">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-aquarius-700">Valor factura actual</div>
+                        <div class="text-lg font-bold text-coral-700">${{ number_format($costo+5000, 0) }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-aquarius-700">Créditos</div>
+                        <div class="font-bold text-green-600">${{ number_format($creditoPendiente, 0) }}</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="text-xs text-aquarius-700">Fecha límite de pago</div>
-                    <div class="font-bold text-red-600">{{ now()->addDays(15)->format('Y-m-d') }}</div>
+                @if($creditoPendiente > 0)
+                <div class="flex justify-between items-center bg-yellow-100 border border-yellow-300 rounded p-1 mt-1">
+                    <div class="text-xs text-yellow-900 font-bold">Tienes créditos pendientes</div>
+                    <div class="text-xs text-yellow-900 font-bold">${{ number_format($creditoPendiente, 0) }}</div>
+                </div>
+                <div class="text-xs text-yellow-900 mt-1">Te invitamos a abonar o cancelar tu crédito desde el módulo de créditos.</div>
+                @else
+                <div class="flex justify-between items-center bg-green-100 border border-green-300 rounded p-1 mt-1">
+                    <div class="text-xs text-green-900 font-bold">¡Felicidades! No tienes créditos pendientes.</div>
+                </div>
+                @endif
+                <div class="flex justify-between items-center mt-1">
+                    <div class="text-xs text-aquarius-700 font-bold">Total a pagar</div>
+                    <div class="text-2xl font-bold text-coral-700">${{ number_format($totalPagar + $creditoPendiente, 0) }}</div>
                 </div>
             </div>
             {{-- DETALLE DE COBRO --}}
@@ -108,11 +150,21 @@
                     <tbody>
                         <tr><td class="p-1">Consumo agua</td><td class="p-1 text-right">${{ number_format($costo, 0) }}</td></tr>
                         <tr><td class="p-1">Cargo fijo</td><td class="p-1 text-right">${{ number_format(5000, 0) }}</td></tr>
+                        <tr><td class="p-1">Créditos</td><td class="p-1 text-right text-green-600">-${{ number_format($creditos, 0) }}</td></tr>
                         <tr><td class="p-1">Subsidio/Contribución</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
                         <tr><td class="p-1">Otros cargos</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
                         <tr><td class="p-1">Saldo anterior</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
                         <tr><td class="p-1">Pagos recientes</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
-                        <tr class="bg-cyan-100 font-bold"><td class="p-1">Total a pagar</td><td class="p-1 text-right">${{ number_format($costo+5000, 0) }}</td></tr>
+                        @if($totalPendientes > 0)
+                            <tr class="bg-yellow-50 font-bold"><td class="p-1">Facturas pendientes</td><td class="p-1 text-right">${{ number_format($totalPendientes, 0) }}</td></tr>
+                            @foreach($pendientes as $p)
+                                <tr class="bg-yellow-100 text-yellow-900">
+                                    <td class="p-1">Pendiente: {{ $p->anio }}/{{ $p->ciclo }}</td>
+                                    <td class="p-1 text-right">${{ number_format(($preciosPorAnio[$p->anio]->costo_base ?? 22000) + 5000, 0) }}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                        <tr class="bg-cyan-100 font-bold"><td class="p-1">Total a pagar</td><td class="p-1 text-right">${{ number_format($totalPagar, 0) }}</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -174,15 +226,18 @@
                 </div>
             </div>
         </div>
+        <div class="flex justify-end no-print mb-2">
+            <button onclick="openPreview(this)" class="px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold shadow hover:bg-blue-800 transition">Imprimir individual (PDF)</button>
+        </div>
         @endforeach
     </div>
 </div>
 <style>
 @media print {
-    @page { size: Letter; margin: 1.5cm; }
+    @page { size: Letter; margin: 0.3cm 1.5cm 1.5cm 1.5cm; }
     body { background: #fff !important; }
     .no-print, nav, footer, form, .print\:hidden { display: none !important; }
-    .factura-servicio { page-break-after: always !important; break-after: page !important; width: 21.59cm !important; height: 27.94cm !important; margin: 0 !important; padding: 1.5cm !important; box-sizing: border-box !important; }
+    .factura-servicio { page-break-after: always !important; break-after: page !important; width: 21.59cm !important; height: 27cm !important; margin: 0 !important; padding: 0.3cm 1.5cm 1.5cm 1.5cm !important; box-sizing: border-box !important; }
     .print\:bg-white { background: #fff !important; }
     .print\:p-0 { padding: 0 !important; }
     .print\:break-after-page { page-break-after: always !important; }
@@ -202,6 +257,165 @@
     }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function vistaPreviaBloque() {
+    const facturas = Array.from(document.querySelectorAll('.factura-servicio'));
+    const modal = document.getElementById('modal-preview');
+    const content = document.getElementById('modal-factura-content');
+    content.innerHTML = '';
+    for (let i = 0; i < 5 && i < facturas.length; i++) {
+        const clone = facturas[i].cloneNode(true);
+        clone.style.margin = '0 auto 2cm auto';
+        clone.style.width = '21.59cm';
+        clone.style.height = '27.94cm';
+        clone.style.padding = '1.5cm';
+        clone.style.background = '#fff';
+        clone.style.boxSizing = 'border-box';
+        clone.style.pageBreakAfter = 'always';
+        content.appendChild(clone);
+    }
+    modal.classList.remove('hidden');
+}
+function openPreview(btn) {
+    // Botón individual: ahora permite imprimir individualmente
+    const factura = btn.closest('.factura-servicio');
+    const modal = document.getElementById('modal-preview');
+    const content = document.getElementById('modal-factura-content');
+    content.innerHTML = '';
+    const clone = factura.cloneNode(true);
+    clone.style.margin = '0 auto';
+    clone.style.width = '21.59cm';
+    clone.style.height = '27.94cm';
+    clone.style.padding = '1.5cm';
+    clone.style.background = '#fff';
+    clone.style.boxSizing = 'border-box';
+    content.appendChild(clone);
+    // Agregar botón de exportar PDF individual si no existe
+    let btnExport = document.getElementById('btn-exportar-individual');
+    if (!btnExport) {
+        btnExport = document.createElement('button');
+        btnExport.id = 'btn-exportar-individual';
+        btnExport.className = 'mt-2 mx-auto px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition';
+        btnExport.innerText = 'Exportar esta factura a PDF';
+        btnExport.onclick = exportarPDFIndividual;
+        content.parentNode.appendChild(btnExport);
+    } else {
+        btnExport.style.display = 'block';
+    }
+    modal.classList.remove('hidden');
+}
+function exportarPDFIndividual() {
+    const content = document.getElementById('modal-factura-content');
+    if (!content) return;
+    const factura = content.firstElementChild;
+    if (!factura) return;
+    // Clonar y preparar para PDF
+    const contenedor = document.createElement('div');
+    const page = document.createElement('div');
+    page.style.width = '21.59cm';
+    page.style.height = '27.94cm';
+    page.style.background = '#fff';
+    page.style.boxSizing = 'border-box';
+    page.style.overflow = 'hidden';
+    page.style.pageBreakAfter = 'always';
+    const clone = factura.cloneNode(true);
+    clone.style.margin = '0';
+    clone.style.width = '21.59cm';
+    clone.style.height = '27.94cm';
+    clone.style.padding = '0';
+    clone.style.background = '#fff';
+    clone.style.boxSizing = 'border-box';
+    clone.style.pageBreakAfter = 'always';
+    page.appendChild(clone);
+    contenedor.appendChild(page);
+    const opt = {
+        margin:       0,
+        filename:     `factura_individual.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'cm', format: 'letter', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] }
+    };
+    html2pdf().set(opt).from(contenedor).save();
+}
+function closePreview() {
+    document.getElementById('modal-preview').classList.add('hidden');
+    // Ocultar botón de exportar individual si existe
+    let btnExport = document.getElementById('btn-exportar-individual');
+    if (btnExport) btnExport.style.display = 'none';
+}
+function printPreviewFactura() {
+    const printContents = document.getElementById('modal-factura-content').innerHTML;
+    const originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    window.location.reload();
+}
+function imprimirIndividualDesdeListado() {
+    // Toma la primera factura visible y la muestra en el modal de impresión individual
+    const factura = document.querySelector('.factura-servicio');
+    if (!factura) return;
+    const modal = document.getElementById('modal-preview');
+    const content = document.getElementById('modal-factura-content');
+    content.innerHTML = '';
+    const clone = factura.cloneNode(true);
+    clone.style.margin = '0 auto';
+    clone.style.width = '21.59cm';
+    clone.style.height = '27cm';
+    clone.style.padding = '1.2cm 1cm 1cm 1cm';
+    clone.style.background = '#fff';
+    clone.style.boxSizing = 'border-box';
+    content.appendChild(clone);
+    modal.classList.remove('hidden');
+}
+function exportarPDFPorBloques() {
+    const facturas = Array.from(document.querySelectorAll('.factura-servicio'));
+    if (facturas.length === 0) return;
+    let bloque = 0;
+    for (let i = 0; i < facturas.length; i += 5) {
+        const contenedor = document.createElement('div');
+        contenedor.style.background = '#fff';
+        contenedor.style.padding = '0';
+        contenedor.style.margin = '0';
+        contenedor.style.width = '21.59cm';
+        contenedor.style.minHeight = '27cm';
+        contenedor.style.boxSizing = 'border-box';
+        // Cada factura en su propia página
+        for (let j = i; j < i + 5 && j < facturas.length; j++) {
+            const page = document.createElement('div');
+            page.style.width = '21.59cm';
+            page.style.height = '27cm';
+            page.style.background = '#fff';
+            page.style.boxSizing = 'border-box';
+            page.style.overflow = 'hidden';
+            page.style.pageBreakAfter = 'always';
+            // Margen de 0.3cm arriba, 1cm laterales y 1cm abajo
+            page.style.padding = '0.3cm 1cm 1cm 1cm';
+            const clone = facturas[j].cloneNode(true);
+            clone.style.margin = '0';
+            clone.style.width = '19.59cm';
+            clone.style.height = '25.7cm';
+            clone.style.padding = '0';
+            clone.style.background = '#fff';
+            clone.style.boxSizing = 'border-box';
+            clone.style.pageBreakAfter = 'always';
+            page.appendChild(clone);
+            contenedor.appendChild(page);
+        }
+        const opt = {
+            margin:       0, // El margen real lo da el padding de page
+            filename:     `facturas_bloque_${++bloque}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'cm', format: 'letter', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] }
+        };
+        html2pdf().set(opt).from(contenedor).save();
+    }
+}
+</script>
 @php
 // Definir función svgLogo() SIEMPRE antes de cualquier uso
 if (!function_exists('svgLogo')) {

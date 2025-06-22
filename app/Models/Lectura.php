@@ -31,4 +31,12 @@ class Lectura extends Model
     {
         return $this->belongsTo(Medidors::class, 'numero_serie', 'numero_serie');
     }
+
+    public function ultimasLecturas()
+    {
+        return $this->hasMany(Lectura::class, 'matricula', 'matricula')
+            ->orderByDesc('anio')
+            ->orderByDesc('ciclo')
+            ->limit(3);
+    }
 }
