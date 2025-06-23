@@ -12,6 +12,9 @@ return new class extends Migration {
             $table->decimal('valor', 12, 2);
             $table->decimal('saldo', 12, 2);
             $table->string('estado')->default('pendiente'); // pendiente, abonado, cancelado
+            $table->date('fecha')->nullable();
+            $table->string('acuerdo')->nullable();
+            $table->string('detalle')->nullable();
             $table->timestamps();
             $table->foreign('usuario_id')->references('id')->on('usuarios')->onDelete('cascade');
         });

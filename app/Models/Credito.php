@@ -8,9 +8,9 @@ class Credito extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'usuario_id', 'matricula', 'valor', 'saldo', 'estado'
+        'usuario_id', 'matricula', 'valor', 'saldo', 'estado', 'fecha', 'acuerdo', 'detalle'
     ];
     public function usuario() {
-        return $this->belongsTo(Usuario::class);
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 }

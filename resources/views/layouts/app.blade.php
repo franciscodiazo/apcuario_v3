@@ -66,6 +66,12 @@
         backdrop-filter: blur(8px);
         border-radius: 1.5rem;
       }
+      /* Menú desplegable al pasar el mouse */
+      .group:hover .group-hover\:opacity-100 { opacity: 1 !important; pointer-events: auto !important; }
+      .group:hover .group-hover\:pointer-events-auto { pointer-events: auto !important; }
+      .group:focus-within .group-hover\:opacity-100 { opacity: 1 !important; pointer-events: auto !important; }
+      .group:focus-within .group-hover\:pointer-events-auto { pointer-events: auto !important; }
+      .group .group-hover\:opacity-100 { transition: opacity 0.2s; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-body text-aquarius-900 bg-gradient-to-br from-aquarius-50 to-sand-50">
@@ -75,18 +81,36 @@
             Acuarius
         </div>
         <div class="space-x-2 md:space-x-6 text-base font-semibold">
-            <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Dashboard</a>
-            <a href="{{ route('usuarios.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Usuarios</a>
-            <a href="{{ route('lecturas.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Lecturas</a>
-            <a href="{{ route('consumos.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Consumos</a>
-            <a href="{{ route('usuarios.listado') }}" class="px-3 py-2 rounded-lg transition hover:bg-coral-100 hover:text-coral-700">Listado Usuarios</a>
-            <a href="{{ route('facturas.masiva') }}" class="px-3 py-2 rounded-lg transition hover:bg-coral-200 hover:text-coral-700">Facturación Masiva</a>
-            <a href="{{ route('creditos.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-green-100 hover:text-green-700">Créditos</a>
-            @if(Route::has('precios.index'))
-            <a href="{{ route('precios.index') }}" class="px-3 py-2 rounded-lg transition hover:bg-yellow-100 hover:text-yellow-700">Precios</a>
-            @else
-            <span class="px-3 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed" title="Módulo no disponible">Precios</span>
-            @endif
+            <div class="flex flex-wrap gap-1 md:gap-2 text-xs md:text-sm">
+                <a href="{{ route('dashboard') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Dashboard</a>
+                <a href="{{ route('usuarios.index') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Usuarios</a>
+                <a href="{{ route('usuarios.listado') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-cyan-100 hover:text-cyan-700">Registrar Lecturas</a>
+                <a href="{{ route('lecturas.index') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-100 hover:text-blue-700">Lecturas</a>
+                <a href="{{ route('facturas.masiva') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-coral-100 hover:text-coral-700">Facturación</a>
+                <a href="{{ route('consumos.index') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-green-100 hover:text-green-700">Cuotas/Pagos</a>
+                <div class="relative group inline-block">
+                    <button class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-green-100 hover:text-green-700 focus:outline-none">Créditos ▾</button>
+                    <div class="absolute left-0 mt-1 w-40 bg-white border border-aquarius-200 rounded shadow-lg opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none z-20">
+                        <a href="{{ route('creditos.index') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-cyan-50">Por usuario</a>
+                        <a href="{{ route('creditos.general') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-cyan-50">General</a>
+                    </div>
+                </div>
+                <div class="relative group inline-block">
+                    <button class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-100 hover:text-blue-700 focus:outline-none">Reportes ▾</button>
+                    <div class="absolute left-0 mt-1 w-48 bg-white border border-aquarius-200 rounded shadow-lg opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none z-20">
+                        <a href="{{ route('reportes.index') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-cyan-50">Reportes</a>
+                        <a href="{{ route('reportes.anual') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-blue-50">Reporte Anual</a>
+                    </div>
+                </div>
+                <div class="relative group inline-block">
+                    <button class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-yellow-100 hover:text-yellow-700 focus:outline-none">Tarifas ▾</button>
+                    <div class="absolute left-0 mt-1 w-44 bg-white border border-aquarius-200 rounded shadow-lg opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none z-20">
+                        <a href="{{ route('tarifas.index') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-yellow-50">Ver Tarifas</a>
+                        <a href="{{ route('tarifas.create') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-yellow-50">Agregar Tarifa</a>
+                    </div>
+                </div>
+                <a href="{{ route('lecturas.movil') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-200 hover:text-blue-900">Lectura móvil</a>
+            </div>
         </div>
     </nav>
     <main class="flex-1 flex justify-center items-start py-10 px-2 bg-transparent">

@@ -113,4 +113,54 @@ public function ultimaLectura(Request $request)
         return view('lecturas.show', compact('lectura'));
     
     }
+    public function movil(Request $request)
+    {
+        $usuario = null;
+        $ultimaLectura = null;
+        if ($request->filled('matricula')) {
+            $usuario = \App\Models\Usuario::where('matricula', $request->matricula)
+                ->orWhere('nombres', 'like', '%'.$request->matricula.'%')
+                ->orWhere('apellidos', 'like', '%'.$request->matricula.'%')
+                ->first();
+            if ($usuario) {
+                $ultimaLectura = \App\Models\Lectura::where('matricula', $usuario->matricula)
+                    ->orderByDesc('anio')
+                    ->orderByDesc('ciclo')
+                    ->first();
+            }
+        }
+        return view('lecturas.movil', compact('usuario', 'ultimaLectura'));
+    }
+
+    public function movilStore(Request $request)
+    {
+        $request->validate([
+            'matricula' => 'required',
+            'lectura_actual' => 'required|numeric|min:0',
+            'fecha' => 'required|date',
+            'anio' => 'required|integer',
+            'ciclo' => 'required|integer|min:1|max:6',
+            'lectura_anterior' => 'nullable|numeric|min:0',
+        ]);
+        $lectura_anterior = $request->lectura_anterior ?? 0;
+        $consumo = $request->lectura_actual - $lectura_anterior;
+        // Buscar tarifa del año correspondiente
+        $tarifa = \App\Models\Tarifa::where('anio', $request->anio)->first();
+        $valor_pagar = 0;
+        if ($tarifa) {
+            $valor_pagar = $tarifa->basico + ($consumo > 0 ? $consumo * $tarifa->adicional_m3 : 0);
+        }
+        \App\Models\Lectura::create([
+            'matricula' => $request->matricula,
+            'anio' => $request->anio,
+            'ciclo' => $request->ciclo,
+            'fecha' => $request->fecha,
+            'lectura_actual' => $request->lectura_actual,
+            'lectura_anterior' => $lectura_anterior,
+            'consumo_m3' => $consumo,
+            // Si quieres guardar el valor a pagar, agrega el campo en la migración y modelo
+            // 'valor_pagar' => $valor_pagar,
+        ]);
+        return redirect()->route('lecturas.movil')->with('success', 'Lectura registrada correctamente. Valor a pagar: $'.number_format($valor_pagar,0,',','.'));
+    }
 }

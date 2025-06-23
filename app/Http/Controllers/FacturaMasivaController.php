@@ -11,11 +11,22 @@ class FacturaMasivaController extends Controller
     {
         $anio = $request->input('anio', date('Y'));
         $ciclo = $request->input('ciclo');
+        $buscar = $request->input('buscar');
         $pagina = max(1, (int)$request->input('pagina', 1));
         $porPagina = 5;
         $query = Lectura::with(['usuario', 'ultimasLecturas']);
         if ($anio) $query->where('anio', $anio);
         if ($ciclo) $query->where('ciclo', $ciclo);
+        if ($buscar) {
+            $query->where(function($q) use ($buscar) {
+                $q->where('matricula', 'like', "%$buscar%")
+                  ->orWhereHas('usuario', function($qu) use ($buscar) {
+                      $qu->where('nombres', 'like', "%$buscar%")
+                         ->orWhere('apellidos', 'like', "%$buscar%")
+                         ->orWhere('matricula', 'like', "%$buscar%") ;
+                  });
+            });
+        }
         $lecturas = $query->orderBy('matricula')->get();
         // Pre-cargar precios por año para eficiencia
         $preciosPorAnio = Precio::whereIn('anio', $lecturas->pluck('anio')->unique())->get()->keyBy('anio');

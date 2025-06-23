@@ -6,10 +6,15 @@ use App\Http\Controllers\MedidorController;
 use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LecturaMasivaController;
+use App\Http\Controllers\ReporteController;
 
 use App\Models\Lectura;
 
 
+
+// Rutas para lecturas en modo movil (debe ir antes de resource para evitar conflictos)
+Route::match(['get', 'post'], 'lecturas/movil', [LecturaController::class, 'movil'])->name('lecturas.movil');
+Route::post('lecturas/movil/store', [LecturaController::class, 'movilStore'])->name('lecturas.movil.store');
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,7 +23,6 @@ Route::get('/', function () {
 Route::resource('usuarios', UsuarioController::class);
 Route::resource('medidores', MedidorController::class);
 Route::resource('lecturas', LecturaController::class);
-Route::resource('lecturas', LecturaController::class)->except(['show']);
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/api/ultima-lectura', [LecturaController::class, 'ultimaLectura']);
 Route::get('/lecturas/masiva/{id}', [LecturaMasivaController::class, 'show'])->name('lecturas.masiva.show');
@@ -55,4 +59,19 @@ Route::get('facturas/masiva', [\App\Http\Controllers\FacturaMasivaController::cl
 
 // Rutas para créditos
 Route::get('/creditos', [App\Http\Controllers\CreditoController::class, 'index'])->name('creditos.index');
+Route::post('/creditos', [App\Http\Controllers\CreditoController::class, 'store'])->name('creditos.store');
 Route::post('/creditos/abonar/{id}', [App\Http\Controllers\CreditoController::class, 'abonar'])->name('creditos.abonar');
+Route::get('/creditos/general', [App\Http\Controllers\CreditoController::class, 'general'])->name('creditos.general');
+
+// Rutas para reportes
+Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+Route::get('/reportes/pdf', [ReporteController::class, 'exportarPdf'])->name('reportes.exportarPdf');
+Route::get('/reportes/anual', [ReporteController::class, 'anual'])->name('reportes.anual');
+Route::get('/reportes/anual/pdf', [ReporteController::class, 'anualPdf'])->name('reportes.anualPdf');
+
+// Rutas para tarifas
+Route::get('/tarifas', [App\Http\Controllers\TarifaController::class, 'index'])->name('tarifas.index');
+Route::get('/tarifas/create', [App\Http\Controllers\TarifaController::class, 'create'])->name('tarifas.create');
+Route::post('/tarifas', [App\Http\Controllers\TarifaController::class, 'store'])->name('tarifas.store');
+Route::get('/tarifas/{id}/edit', [App\Http\Controllers\TarifaController::class, 'edit'])->name('tarifas.edit');
+Route::post('/tarifas/{id}', [App\Http\Controllers\TarifaController::class, 'update'])->name('tarifas.update');

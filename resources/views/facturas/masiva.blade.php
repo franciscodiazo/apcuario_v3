@@ -12,6 +12,10 @@
             <label class="block text-xs font-bold text-aquarius-700 mb-1">Ciclo</label>
             <input type="number" name="ciclo" value="{{ $ciclo }}" class="w-24 rounded border-aquarius-200 text-center focus:ring-coral-400" min="1" max="6" />
         </div>
+        <div>
+            <label class="block text-xs font-bold text-aquarius-700 mb-1">Buscar</label>
+            <input type="text" name="buscar" value="{{ request('buscar') }}" placeholder="Matrícula, nombre o apellido" class="w-56 rounded border-aquarius-200 focus:ring-coral-400" />
+        </div>
         <input type="hidden" name="pagina" value="{{ $pagina ?? 1 }}">
         <button class="px-6 py-2 rounded-lg bg-aquarius-700 text-white font-semibold shadow hover:bg-coral-600 transition">Filtrar</button>
         <button type="button" onclick="window.print()" class="px-6 py-2 rounded-lg bg-coral-500 text-white font-semibold shadow hover:bg-coral-700 transition ml-auto">Imprimir página</button>
@@ -20,12 +24,12 @@
         <div class="text-xs text-aquarius-700">Mostrando página {{ $pagina }} de {{ $totalPaginas }}</div>
         <div class="flex gap-2">
             @for($i=1; $i<=$totalPaginas; $i++)
-                <a href="?anio={{ $anio }}&ciclo={{ $ciclo }}&pagina={{ $i }}" class="px-3 py-1 rounded {{ $i==$pagina ? 'bg-coral-500 text-white' : 'bg-aquarius-100 text-aquarius-700' }} font-bold">{{ $i }}</a>
+                <a href="?anio={{ $anio }}&ciclo={{ $ciclo }}&pagina={{ $i }}@if(request('buscar'))&buscar={{ urlencode(request('buscar')) }}@endif" class="px-3 py-1 rounded {{ $i==$pagina ? 'bg-coral-500 text-white' : 'bg-aquarius-100 text-aquarius-700' }} font-bold">{{ $i }}</a>
             @endfor
         </div>
     </div>
     <div class="mb-6 flex justify-end gap-4 no-print">
-        <button onclick="imprimirIndividualDesdeListado()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-800 transition">Imprimir individual (PDF)</button>
+        {{-- <button onclick="imprimirIndividualDesdeListado()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-800 transition">Imprimir individual (PDF)</button> --}}
         <button onclick="exportarPDFPorBloques()" class="px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Exportar a PDF (5 facturas)</button>
     </div>
     <!-- Modal de impresión individual -->
@@ -36,7 +40,7 @@
             <div id="modal-factura-content" class="overflow-auto p-2" style="width:19.59cm; height:25.5cm; margin:auto; box-sizing:border-box; background:#fff;">
                 <!-- Aquí se inyectan las facturas -->
             </div>
-            <button onclick="exportarPDFIndividual()" class="mt-2 mx-auto px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Imprimir individual (PDF)</button>
+            {{-- <button onclick="exportarPDFIndividual()" class="mt-2 mx-auto px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Imprimir individual (PDF)</button> --}}
         </div>
     </div>
     <div class="print:bg-white print:p-0" id="facturas-area">
@@ -226,29 +230,38 @@
                 </div>
             </div>
         </div>
-        <div class="flex justify-end no-print mb-2">
-            <button onclick="openPreview(this)" class="px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold shadow hover:bg-blue-800 transition">Imprimir individual (PDF)</button>
-        </div>
+        {{-- Botón de imprimir individual eliminado de la vista masiva --}}
         @endforeach
     </div>
 </div>
 <style>
 @media print {
-    @page { size: Letter; margin: 0.3cm 1.5cm 1.5cm 1.5cm; }
+    @page { size: Letter; margin: 0.3cm 1.0cm 1.0cm 1.0cm; }
     body { background: #fff !important; }
     .no-print, nav, footer, form, .print\:hidden { display: none !important; }
-    .factura-servicio { page-break-after: always !important; break-after: page !important; width: 21.59cm !important; height: 27cm !important; margin: 0 !important; padding: 0.3cm 1.5cm 1.5cm 1.5cm !important; box-sizing: border-box !important; }
+    .factura-servicio {
+        page-break-after: always !important;
+        break-after: page !important;
+        width: 21.59cm !important;
+        height: 27.94cm !important;
+        margin: 0 !important;
+        padding: 0.3cm 1cm 1cm 1cm !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
     .print\:bg-white { background: #fff !important; }
     .print\:p-0 { padding: 0 !important; }
     .print\:break-after-page { page-break-after: always !important; }
     .print\:shadow-none { box-shadow: none !important; }
-    .print\:border { border: 1px solid #000 !important; }
+    .print\:border { border: none !important; }
     .print\:rounded-none { border-radius: 0 !important; }
     .print\:p-4 { padding: 1rem !important; }
     #facturas-area { display: block !important; }
     /* Refuerzo para barras y logo en impresión */
     .factura-servicio svg { display: inline !important; }
-    .factura-servicio .w-6 { border: 1px solid #000 !important; }
+    .factura-servicio .w-6 { border: none !important; }
     /* Mantener colores en impresión */
     .factura-servicio, .factura-servicio * {
         -webkit-print-color-adjust: exact !important;

@@ -32,6 +32,7 @@
                     <th class="px-4 py-3 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">Sector</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">No. Personas</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">Dirección</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-aquarius-700 uppercase tracking-wider">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-aquarius-100">
@@ -47,10 +48,13 @@
                     <td class="px-4 py-2 whitespace-nowrap">{{ $usuario->sector }}</td>
                     <td class="px-4 py-2 whitespace-nowrap">{{ $usuario->no_personas }}</td>
                     <td class="px-4 py-2 whitespace-nowrap">{{ $usuario->direccion }}</td>
+                    <td class="px-4 py-2 text-right">
+                        <a href="{{ route('usuarios.edit', $usuario->id) }}" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-800 transition">Editar</a>
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="text-center py-6 text-aquarius-400">No hay usuarios registrados.</td>
+                    <td colspan="11" class="text-center py-6 text-aquarius-400">No hay usuarios registrados.</td>
                 </tr>
                 @endforelse
             </tbody>
