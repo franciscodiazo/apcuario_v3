@@ -2,7 +2,16 @@
 @section('content')
 <div class="max-w-3xl mx-auto mt-8 p-6 bg-white/90 rounded-xl shadow-lg">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-coral-700">Bienvenido, {{ $usuario->nombres }} {{ $usuario->apellidos }}</h2>
+        <h2 class="text-2xl font-bold text-coral-700">
+            @php $user = Auth::user(); @endphp
+            @if($user && $user->hasRole('admin'))
+                Bienvenido Administrador, {{ $usuario->nombres }} {{ $usuario->apellidos }}
+            @elseif($user && $user->hasRole('operador'))
+                Bienvenido Operador, {{ $usuario->nombres }} {{ $usuario->apellidos }}
+            @else
+                Bienvenido, {{ $usuario->nombres }} {{ $usuario->apellidos }}
+            @endif
+        </h2>
         <form method="POST" action="{{ route('cliente.logout') }}">
             @csrf
             <button class="px-4 py-2 bg-coral-600 text-white rounded-lg font-bold hover:bg-coral-800 transition">Salir</button>

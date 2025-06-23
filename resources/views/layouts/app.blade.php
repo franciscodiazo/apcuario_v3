@@ -72,55 +72,83 @@
       .group:focus-within .group-hover\:opacity-100 { opacity: 1 !important; pointer-events: auto !important; }
       .group:focus-within .group-hover\:pointer-events-auto { pointer-events: auto !important; }
       .group .group-hover\:opacity-100 { transition: opacity 0.2s; }
+      @media print {
+        aside, nav, .glass, .bg-aquarius-800, .bg-white\/80, .shadow-lg, .shadow-sm, .border, .border-aquarius-100, .border-aquarius-700 {
+          display: none !important;
+        }
+        main, .print-area {
+          display: block !important;
+          position: static !important;
+          box-shadow: none !important;
+          background: white !important;
+          border: none !important;
+        }
+        body { background: white !important; }
+      }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-body text-aquarius-900 bg-gradient-to-br from-aquarius-50 to-sand-50">
-    <nav class="bg-aquarius-700/90 text-white px-8 py-4 flex justify-between items-center shadow-lg rounded-b-2xl">
-        <div class="font-display text-2xl tracking-widest flex items-center gap-2">
-            <svg xmlns='http://www.w3.org/2000/svg' class='h-7 w-7 text-coral-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6' /></svg>
-            Acuarius
-        </div>
-        <div class="space-x-2 md:space-x-6 text-base font-semibold">
-            <div class="flex flex-wrap gap-1 md:gap-2 text-xs md:text-sm">
-                <a href="{{ route('dashboard') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Dashboard</a>
-                <a href="{{ route('usuarios.index') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-aquarius-500/30 hover:text-coral-500">Usuarios</a>
-                <a href="{{ route('usuarios.listado') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-cyan-100 hover:text-cyan-700">Registrar Lecturas</a>
-                <a href="{{ route('lecturas.index') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-100 hover:text-blue-700">Lecturas</a>
-                <a href="{{ route('facturas.masiva') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-coral-100 hover:text-coral-700">Facturación</a>
-                <a href="{{ route('consumos.index') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-green-100 hover:text-green-700">Cuotas/Pagos</a>
-                <div class="relative group inline-block">
-                    <button class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-green-100 hover:text-green-700 focus:outline-none">Créditos ▾</button>
-                    <div class="absolute left-0 mt-1 w-40 bg-white border border-aquarius-200 rounded shadow-lg opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none z-20">
-                        <a href="{{ route('creditos.index') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-cyan-50">Por usuario</a>
-                        <a href="{{ route('creditos.general') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-cyan-50">General</a>
-                    </div>
-                </div>
-                <div class="relative group inline-block">
-                    <button class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-100 hover:text-blue-700 focus:outline-none">Reportes ▾</button>
-                    <div class="absolute left-0 mt-1 w-48 bg-white border border-aquarius-200 rounded shadow-lg opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none z-20">
-                        <a href="{{ route('reportes.index') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-cyan-50">Reportes</a>
-                        <a href="{{ route('reportes.anual') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-blue-50">Reporte Anual</a>
-                    </div>
-                </div>
-                <div class="relative group inline-block">
-                    <button class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-yellow-100 hover:text-yellow-700 focus:outline-none">Tarifas ▾</button>
-                    <div class="absolute left-0 mt-1 w-44 bg-white border border-aquarius-200 rounded shadow-lg opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none z-20">
-                        <a href="{{ route('tarifas.index') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-yellow-50">Ver Tarifas</a>
-                        <a href="{{ route('tarifas.create') }}" class="block px-4 py-2 text-aquarius-900 hover:bg-yellow-50">Agregar Tarifa</a>
-                    </div>
-                </div>
-                <a href="{{ route('lecturas.movil') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-200 hover:text-blue-900">Lectura móvil</a>
-                <a href="{{ route('cliente.login') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-yellow-100 hover:text-yellow-700">Consulta cliente</a>
+    <div x-data="{ open: true }" class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside :class="open ? 'w-64' : 'w-16'" class="transition-all duration-300 bg-aquarius-800 text-white flex flex-col shadow-lg z-30">
+            <div class="flex items-center justify-between px-4 py-4 border-b border-aquarius-700">
+                <span class="font-display text-xl tracking-widest" x-show="open">Acuarius</span>
+                <button @click="open = !open" class="focus:outline-none">
+                    <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    <svg x-show="open" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
             </div>
+            <div class="flex-1 flex flex-col gap-2 mt-4" x-show="open">
+                @auth
+                    @php $user = Auth::user(); @endphp
+                    <div class="px-4 py-2 text-xs bg-aquarius-900/80 rounded mb-2">{{ $user->name ?? $user->email ?? 'Usuario' }}<br><span class="text-aquarius-200">({{ $user->roles->pluck('name')->implode(', ') }})</span></div>
+                    @if(method_exists($user, 'hasRole') && ($user->hasRole('admin') || $user->hasRole('operador')))
+                        <a href="{{ route('dashboard') }}" class="block px-4 py-2 rounded transition hover:bg-aquarius-600 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6'/></svg>Dashboard</a>
+                        <a href="{{ route('usuarios.index') }}" class="block px-4 py-2 rounded transition hover:bg-aquarius-600 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg>Usuarios</a>
+                        <a href="{{ route('usuarios.listado') }}" class="block px-4 py-2 rounded transition hover:bg-cyan-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M12 4v16m8-8H4'/></svg>Registrar Lecturas</a>
+                        <a href="{{ route('lecturas.index') }}" class="block px-4 py-2 rounded transition hover:bg-blue-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'/></svg>Lecturas</a>
+                        <a href="{{ route('facturas.masiva') }}" class="block px-4 py-2 rounded transition hover:bg-coral-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h6a2 2 0 002-2V7a2 2 0 00-2-2h-2l-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2z'/></svg>Facturación</a>
+                        <a href="{{ route('consumos.index') }}" class="block px-4 py-2 rounded transition hover:bg-green-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 8v8'/></svg>Cuotas/Pagos</a>
+                        <a href="{{ route('creditos.index') }}" class="block px-4 py-2 rounded transition hover:bg-green-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M17 9V7a5 5 0 00-10 0v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2z'/></svg>Créditos</a>
+                        <a href="{{ route('creditos.general') }}" class="block px-4 py-2 rounded transition hover:bg-green-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 8v8'/></svg>Créditos General</a>
+                        <a href="{{ route('reportes.index') }}" class="block px-4 py-2 rounded transition hover:bg-blue-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h6a2 2 0 002-2V7a2 2 0 00-2-2h-2l-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2z'/></svg>Reportes</a>
+                        <a href="{{ route('reportes.anual') }}" class="block px-4 py-2 rounded transition hover:bg-blue-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M3 3h18v18H3V3z'/></svg>Reporte Anual</a>
+                        <a href="{{ route('tarifas.index') }}" class="block px-4 py-2 rounded transition hover:bg-yellow-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 8v8'/></svg>Tarifas</a>
+                        <a href="{{ route('tarifas.create') }}" class="block px-4 py-2 rounded transition hover:bg-yellow-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M12 4v16m8-8H4'/></svg>Agregar Tarifa</a>
+                        <a href="{{ route('lecturas.movil') }}" class="block px-4 py-2 rounded transition hover:bg-blue-800 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M3 10h18M3 6h18M3 14h18M3 18h18'/></svg>Lectura móvil</a>
+                    @endif
+                    @if(method_exists($user, 'hasRole') && $user->hasRole('cliente'))
+                        <a href="{{ route('cliente.panel') }}" class="block px-4 py-2 rounded transition hover:bg-aquarius-600 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg>Panel Cliente</a>
+                        <a href="{{ route('cliente.factura.ver', ['lecturaId' => 1]) }}" class="block px-4 py-2 rounded transition hover:bg-coral-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h6a2 2 0 002-2V7a2 2 0 00-2-2h-2l-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2z'/></svg>Mis Facturas</a>
+                    @endif
+                @else
+                    <a href="{{ route('cliente.login') }}" class="block px-4 py-2 rounded transition hover:bg-yellow-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5 12h14M12 5l7 7-7 7'/></svg>Consulta cliente</a>
+                @endauth
+            </div>
+        </aside>
+        <!-- Main content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Navbar superior -->
+            <nav class="w-full flex items-center justify-end bg-white/80 px-6 py-3 shadow-sm border-b border-aquarius-100">
+                @auth
+                    @php $user = Auth::user(); @endphp
+                    <span class="mr-4 font-bold text-aquarius-900">{{ $user->name ?? $user->email ?? 'Usuario' }} ({{ $user->roles->pluck('name')->implode(', ') }})</span>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition">Salir</button>
+                    </form>
+                @endauth
+            </nav>
+            <main class="flex-1 flex justify-center items-start py-10 px-2 bg-transparent">
+                <div class="w-full max-w-5xl glass p-8 shadow-xl border border-aquarius-100">
+                    @yield('content')
+                </div>
+            </main>
+            <footer class="text-center text-xs text-aquarius-700 py-6 font-body tracking-wide">
+                &copy; {{ date('Y') }} Acuarius. Todos los derechos reservados.
+            </footer>
         </div>
-    </nav>
-    <main class="flex-1 flex justify-center items-start py-10 px-2 bg-transparent">
-        <div class="w-full max-w-5xl glass p-8 shadow-xl border border-aquarius-100">
-            @yield('content')
-        </div>
-    </main>
-    <footer class="text-center text-xs text-aquarius-700 py-6 font-body tracking-wide">
-        &copy; {{ date('Y') }} Acuarius. Todos los derechos reservados.
-    </footer>
+    </div>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </body>
 </html>

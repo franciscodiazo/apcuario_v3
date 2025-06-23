@@ -3,6 +3,14 @@
 <div class="w-full max-w-lg mx-auto">
     <div class="bg-white rounded-xl shadow-lg p-8">
         <h2 class="text-xl font-bold mb-4 text-aquarius-800">Previsualización de Factura</h2>
+        @auth
+            @php $user = Auth::user(); @endphp
+            @if($user && ($user->hasRole('admin') || $user->hasRole('operador')))
+                <div class="max-w-2xl mx-auto my-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 rounded">
+                    <strong>Advertencia:</strong> Estás visualizando la factura como administrador/operador. Ten cuidado con la información sensible.
+                </div>
+            @endif
+        @endauth
         <div class="mb-4">
             <div class="flex justify-between mb-2">
                 <span class="font-bold">Matrícula:</span>
