@@ -48,15 +48,31 @@
                 </span>
             </div>
             @php
-                $base = $precios->costo_base ?? 22000;
                 $limite = $precios->limite_base ?? 50;
-                $adicional = $precios->costo_adicional ?? 2500;
+                $basico = $precios->costo_base ?? 22000;
+                $adicional_m3 = $precios->costo_adicional ?? 2500;
                 $consumo = $lectura->consumo_m3;
-                $costo = $consumo <= $limite ? $base : $base + ($consumo - $limite) * $adicional;
+                $adicionales = max(0, $consumo - $limite);
+                $valor_basico = $basico;
+                $valor_adicional = $adicionales * $adicional_m3;
+                $valor_factura = $valor_basico + $valor_adicional;
             @endphp
-            <div class="flex justify-between mb-2">
-                <span class="font-bold">Valor a pagar:</span>
-                <span class="text-coral-700 font-bold text-lg">${{ number_format($costo, 0) }}</span>
+            <div class="flex flex-col gap-1 mb-2">
+                <div class="flex justify-between">
+                    <span class="font-bold">Consumo básico:</span>
+                    <span>Hasta {{ $limite }} m³</span>
+                    <span>${{ number_format($valor_basico, 0) }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Consumo adicional:</span>
+                    <span>{{ $adicionales }} m³ x ${{ number_format($adicional_m3, 0) }}</span>
+                    <span>${{ number_format($valor_adicional, 0) }}</span>
+                </div>
+                <div class="flex justify-between font-bold bg-blue-50 rounded px-2 py-1 mt-1">
+                    <span>Total a pagar:</span>
+                    <span></span>
+                    <span class="text-coral-700 text-lg">${{ number_format($valor_factura, 0) }}</span>
+                </div>
             </div>
             @if($lectura->pagado)
             <div class="flex justify-between mb-2">

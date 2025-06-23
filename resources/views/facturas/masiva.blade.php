@@ -1,7 +1,7 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="w-full">
+    @if(empty($soloFactura))
     <h1 class="text-2xl font-display font-bold text-aquarius-800 mb-6 no-print">Facturación Masiva</h1>
     <form method="GET" class="mb-6 flex flex-wrap gap-4 items-end no-print">
         <div>
@@ -29,9 +29,26 @@
         </div>
     </div>
     <div class="mb-6 flex justify-end gap-4 no-print">
-        {{-- <button onclick="imprimirIndividualDesdeListado()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-800 transition">Imprimir individual (PDF)</button> --}}
         <button onclick="exportarPDFPorBloques()" class="px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Exportar a PDF (5 facturas)</button>
     </div>
+    @else
+    <div class="mb-6 flex justify-end gap-4 no-print">
+        <a href="{{ route('cliente.factura.pdf', $lecturas[0]->id) }}" class="px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Descargar</a>
+    </div>
+    <style>
+    body, html {
+        background: #f8fafc !important;
+        min-width: 1024px;
+        min-height: 768px;
+    }
+    .factura-servicio {
+        margin: 2rem auto !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        border-radius: 1.5rem;
+        border: 1px solid #e0e7ef;
+    }
+    </style>
+    @endif
     <!-- Modal de impresión individual -->
     <div id="modal-preview" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
         <div class="bg-white rounded-lg shadow-lg w-[21cm] h-[28cm] flex flex-col relative border-4 border-coral-500">
@@ -40,7 +57,6 @@
             <div id="modal-factura-content" class="overflow-auto p-2" style="width:19.59cm; height:25.5cm; margin:auto; box-sizing:border-box; background:#fff;">
                 <!-- Aquí se inyectan las facturas -->
             </div>
-            {{-- <button onclick="exportarPDFIndividual()" class="mt-2 mx-auto px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-800 transition">Imprimir individual (PDF)</button> --}}
         </div>
     </div>
     <div class="print:bg-white print:p-0" id="facturas-area">
@@ -56,12 +72,9 @@
             $maxBar = 100;
             $maxConsumo = max(1, $ultimas->max('consumo_m3'));
             $escala = $maxConsumo > $maxBar ? $maxBar / $maxConsumo : 1;
-            // Buscar créditos del usuario para mostrar en la factura
             $creditoPendiente = $lectura->usuario ? $lectura->usuario->creditos()->where('saldo', '>', 0)->sum('saldo') : 0;
-            $creditos = $creditoPendiente; // Para usar en el detalle
-            // Total a pagar: consumo + cargo fijo - créditos (nunca menor a 0)
+            $creditos = $creditoPendiente;
             $totalPagar = max(0, ($costo + 5000) - $creditos);
-            // Facturas pendientes (si existen)
             $totalPendientes = isset($pendientes) ? $pendientes->sum(function($p) use ($preciosPorAnio) {
                 $basePend = $preciosPorAnio[$p->anio]->costo_base ?? 22000;
                 return $basePend + 5000;
@@ -118,27 +131,22 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <div class="text-xs text-aquarius-700">Valor factura actual</div>
-                        <div class="text-lg font-bold text-coral-700">${{ number_format($costo+5000, 0) }}</div>
+                        <div class="text-lg font-bold text-coral-700">
+                            @php
+                                $adicionales = max(0, ($lectura->consumo_m3 ?? 0) - ($precios->costo_base ? 50 : 50));
+                                $valor_factura = ($precios->costo_base ?? 0) + ($adicionales * ($precios->costo_adicional ?? 0));
+                            @endphp
+                            ${{ number_format($valor_factura, 0) }}
+                        </div>
                     </div>
                     <div>
-                        <div class="text-xs text-aquarius-700">Créditos</div>
+                        <div class="text-xs text-aquarius-700">Saldo pendiente</div>
                         <div class="font-bold text-green-600">${{ number_format($creditoPendiente, 0) }}</div>
                     </div>
                 </div>
-                @if($creditoPendiente > 0)
-                <div class="flex justify-between items-center bg-yellow-100 border border-yellow-300 rounded p-1 mt-1">
-                    <div class="text-xs text-yellow-900 font-bold">Tienes créditos pendientes</div>
-                    <div class="text-xs text-yellow-900 font-bold">${{ number_format($creditoPendiente, 0) }}</div>
-                </div>
-                <div class="text-xs text-yellow-900 mt-1">Te invitamos a abonar o cancelar tu crédito desde el módulo de créditos.</div>
-                @else
-                <div class="flex justify-between items-center bg-green-100 border border-green-300 rounded p-1 mt-1">
-                    <div class="text-xs text-green-900 font-bold">¡Felicidades! No tienes créditos pendientes.</div>
-                </div>
-                @endif
                 <div class="flex justify-between items-center mt-1">
                     <div class="text-xs text-aquarius-700 font-bold">Total a pagar</div>
-                    <div class="text-2xl font-bold text-coral-700">${{ number_format($totalPagar + $creditoPendiente, 0) }}</div>
+                    <div class="text-2xl font-bold text-coral-700">${{ number_format($valor_factura, 0) }}</div>
                 </div>
             </div>
             {{-- DETALLE DE COBRO --}}
@@ -152,23 +160,34 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td class="p-1">Consumo agua</td><td class="p-1 text-right">${{ number_format($costo, 0) }}</td></tr>
-                        <tr><td class="p-1">Cargo fijo</td><td class="p-1 text-right">${{ number_format(5000, 0) }}</td></tr>
-                        <tr><td class="p-1">Créditos</td><td class="p-1 text-right text-green-600">-${{ number_format($creditos, 0) }}</td></tr>
-                        <tr><td class="p-1">Subsidio/Contribución</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
-                        <tr><td class="p-1">Otros cargos</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
-                        <tr><td class="p-1">Saldo anterior</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
-                        <tr><td class="p-1">Pagos recientes</td><td class="p-1 text-right">${{ number_format(0, 0) }}</td></tr>
-                        @if($totalPendientes > 0)
-                            <tr class="bg-yellow-50 font-bold"><td class="p-1">Facturas pendientes</td><td class="p-1 text-right">${{ number_format($totalPendientes, 0) }}</td></tr>
-                            @foreach($pendientes as $p)
-                                <tr class="bg-yellow-100 text-yellow-900">
-                                    <td class="p-1">Pendiente: {{ $p->anio }}/{{ $p->ciclo }}</td>
-                                    <td class="p-1 text-right">${{ number_format(($preciosPorAnio[$p->anio]->costo_base ?? 22000) + 5000, 0) }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                        <tr class="bg-cyan-100 font-bold"><td class="p-1">Total a pagar</td><td class="p-1 text-right">${{ number_format($totalPagar, 0) }}</td></tr>
+                        <tr>
+                            <td class="p-1">Consumo básico</td>
+                            <td class="p-1">Hasta 50 m³</td>
+                            <td class="p-1 text-right">${{ number_format($precios->costo_base ?? 0, 0) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="p-1">Consumo adicional</td>
+                            <td class="p-1">
+                                @php
+                                    $adicionales = max(0, ($lectura->consumo_m3 ?? 0) - ($precios->limite_base ?? 50));
+                                @endphp
+                                {{ $adicionales }} m³ x ${{ number_format($precios->costo_adicional ?? 0, 0) }}
+                            </td>
+                            <td class="p-1 text-right">
+                                ${{ number_format($adicionales * ($precios->costo_adicional ?? 0), 0) }}
+                            </td>
+                        </tr>
+                        <tr class="bg-cyan-100 font-bold">
+                            <td class="p-1">Total a pagar</td>
+                            <td class="p-1"></td>
+                            <td class="p-1 text-right">
+                                @php
+                                    $valor_factura = ($precios->costo_base ?? 0) + ($adicionales * ($precios->costo_adicional ?? 0));
+                                    $total_pagar = max(0, $valor_factura - $creditoPendiente);
+                                @endphp
+                                ${{ number_format($total_pagar, 0) }}
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -224,7 +243,7 @@
                 </div>
                 <div class="flex justify-between items-center mt-1">
                     <div class="text-xs">Cliente: <span class="font-bold">{{ $lectura->usuario ? $lectura->usuario->nombres . ' ' . $lectura->usuario->apellidos : '' }}</span></div>
-                    <div class="text-xs">Valor: <span class="font-bold text-coral-700">${{ number_format($costo+5000, 0) }}</span></div>
+                    <div class="text-xs">Valor: <span class="font-bold text-coral-700">${{ number_format($valor_factura, 0) }}</span></div>
                     <div class="text-xs">Fecha límite: <span class="font-bold text-red-600">{{ now()->addDays(15)->format('Y-m-d') }}</span></div>
                     <div class="w-16 h-8 bg-gray-200 flex items-center justify-center rounded">QR</div>
                 </div>

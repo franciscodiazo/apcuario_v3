@@ -75,3 +75,11 @@ Route::get('/tarifas/create', [App\Http\Controllers\TarifaController::class, 'cr
 Route::post('/tarifas', [App\Http\Controllers\TarifaController::class, 'store'])->name('tarifas.store');
 Route::get('/tarifas/{id}/edit', [App\Http\Controllers\TarifaController::class, 'edit'])->name('tarifas.edit');
 Route::post('/tarifas/{id}', [App\Http\Controllers\TarifaController::class, 'update'])->name('tarifas.update');
+
+// Módulo de consulta para usuario cliente
+Route::get('/cliente/login', [App\Http\Controllers\ClienteController::class, 'loginForm'])->name('cliente.login');
+Route::post('/cliente/login', [App\Http\Controllers\ClienteController::class, 'login']);
+Route::get('/cliente/panel', [App\Http\Controllers\ClienteController::class, 'panel'])->name('cliente.panel');
+Route::post('/cliente/logout', [App\Http\Controllers\ClienteController::class, 'logout'])->name('cliente.logout');
+Route::get('/cliente/factura/{lecturaId}/pdf', [App\Http\Controllers\ClienteController::class, 'descargarFactura'])->name('cliente.factura.pdf');
+Route::get('/cliente/factura/{lecturaId}/ver', [App\Http\Controllers\ClienteController::class, 'verFactura'])->name('cliente.factura.ver');

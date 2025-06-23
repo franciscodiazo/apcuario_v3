@@ -29,7 +29,23 @@ class FacturaMasivaController extends Controller
         }
         $lecturas = $query->orderBy('matricula')->get();
         // Pre-cargar precios por año para eficiencia
-        $preciosPorAnio = Precio::whereIn('anio', $lecturas->pluck('anio')->unique())->get()->keyBy('anio');
+        $preciosPorAnio = \App\Models\Tarifa::whereIn('anio', $lecturas->pluck('anio')->unique())->get()->keyBy('anio');
+        // Calcular valores de factura para cada lectura
+        foreach ($lecturas as $lectura) {
+            $precios = $preciosPorAnio[$lectura->anio] ?? null;
+            $limite = $precios->basico ? 50 : 50;
+            $basico = $precios->basico ?? 0;
+            $adicional_m3 = $precios->adicional_m3 ?? 0;
+            $consumo = $lectura->consumo_m3;
+            $adicionales = max(0, $consumo - $limite);
+            $valor_basico = $basico;
+            $valor_adicional = $adicionales * $adicional_m3;
+            $lectura->valor_basico = $valor_basico;
+            $lectura->valor_adicional = $valor_adicional;
+            $lectura->adicionales = $adicionales;
+            $lectura->valor_factura = $valor_basico + $valor_adicional;
+            $lectura->total_pagar = max(0, $lectura->valor_factura - ($lectura->usuario ? $lectura->usuario->creditos()->where('saldo', '>', 0)->sum('saldo') : 0));
+        }
         // Paginación manual
         $total = $lecturas->count();
         $lecturas = $lecturas->slice(($pagina-1)*$porPagina, $porPagina);

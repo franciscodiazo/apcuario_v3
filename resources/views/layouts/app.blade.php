@@ -110,6 +110,7 @@
                     </div>
                 </div>
                 <a href="{{ route('lecturas.movil') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-blue-200 hover:text-blue-900">Lectura móvil</a>
+                <a href="{{ route('cliente.login') }}" class="px-2 md:px-3 py-2 rounded-lg transition hover:bg-yellow-100 hover:text-yellow-700">Consulta cliente</a>
             </div>
         </div>
     </nav>
