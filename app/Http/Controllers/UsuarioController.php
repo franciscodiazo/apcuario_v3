@@ -1,13 +1,28 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Usuario;
+use App\Models\Role;
 
 class UsuarioController extends Controller
 {
+    // Seguridad: Proteger con middleware auth y rol
+    public function __construct()
+    {
+        $this->middleware('auth');
+        // Si se reactiva el middleware de rol, agregar aquí
+    }
+
     public function index(Request $request)
     {
+        // Seguridad: Permitir admin y operador
+        $user = Auth::user();
+        if (!$user || !($user->roles->contains('name', 'admin') || $user->roles->contains('name', 'operador'))) {
+            abort(403, 'No autorizado.');
+        }
         $query = Usuario::query();
         if ($request->filled('buscar')) {
             $buscar = $request->input('buscar');
@@ -26,24 +41,25 @@ class UsuarioController extends Controller
 
     public function create()
     {
-        return view('usuarios.create');
+        $roles = Role::all();
+        return view('usuarios.create', compact('roles'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'matricula' => 'required|unique:usuarios,matricula',
-            'documento' => 'required|unique:usuarios,documento',
-            'apellidos' => 'required',
-            'nombres' => 'required',
-            'correo' => 'nullable|email',
-            'estrato' => 'nullable',
-            'celular' => 'nullable',
-            'sector' => 'nullable',
-            'no_personas' => 'nullable|integer',
-            'direccion' => 'required',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:usuarios,email',
+            'password' => 'required|string|min:8|confirmed',
+            'rol_id' => 'required|exists:roles,id',
         ]);
-        Usuario::create($request->all());
+        $usuario = Usuario::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'rol_id' => $validated['rol_id'],
+        ]);
+        $usuario->roles()->attach($validated['rol_id']);
         return redirect()->route('usuarios.index')->with('success', 'Usuario creado correctamente.');
     }
 

@@ -6,11 +6,22 @@ use App\Models\Usuario;
 use App\Models\Lectura;
 use App\Models\Credito;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
+        $user = Auth::user();
+        if (!$user) {
+            abort(403, 'No autorizado.');
+        }
+
         $usuariosCount = Usuario::count();
         $ultimoUsuario = Usuario::orderByDesc('created_at')->first();
 
@@ -121,7 +132,8 @@ class DashboardController extends Controller
             'creditosPendientes',
             'facturasPagadas',
             'facturasPendientes',
-            'tarifaActual'
+            'tarifaActual',
+            'user'
         ));
     }
 }

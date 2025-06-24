@@ -4,11 +4,22 @@ namespace App\Http\Controllers;
 use App\Models\Lectura;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class LecturaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
     {
+        $user = Auth::user();
+        if (!$user || !($user->roles->contains('name', 'admin') || $user->roles->contains('name', 'operador'))) {
+            abort(403, 'No autorizado.');
+        }
         $query = \App\Models\Lectura::with(['usuario', 'medidor']);
 
         // Búsqueda
@@ -48,65 +59,33 @@ class LecturaController extends Controller
     }
 
     // Endpoint para AJAX: obtener la última lectura de una matrícula
-public function ultimaLectura(Request $request)
-{
-    $lectura = \App\Models\Lectura::where('matricula', $request->matricula)
-        ->orderByDesc('anio')
-        ->orderByDesc('ciclo')
-        ->first();
-
-    return response()->json([
-        'anio' => $lectura ? $lectura->anio : null,
-        'ciclo' => $lectura ? $lectura->ciclo : null,
-        'lectura_actual' => $lectura ? $lectura->lectura_actual : 0,
-        'fecha' => $lectura ? $lectura->fecha : null,
-    ]);
-}
-
-    public function store(Request $request)
+    public function ultimaLectura(Request $request)
     {
-        $request->validate([
-            'matricula' => 'required|exists:usuarios,matricula',
-            'anio' => 'required|integer',
-            'ciclo' => 'required|integer|min:1|max:6',
-            'fecha' => 'required|date',
-            'lectura_actual' => 'required|integer|min:0',
-        ]);
-
-        // Buscar la última lectura anterior
-        $lecturaAnterior = \App\Models\Lectura::where('matricula', $request->matricula)
+        $lectura = \App\Models\Lectura::where('matricula', $request->matricula)
             ->orderByDesc('anio')
             ->orderByDesc('ciclo')
             ->first();
 
-        $lectura_anterior = $lecturaAnterior ? $lecturaAnterior->lectura_actual : 0;
-
-        // Calcular el siguiente ciclo y año
-        $anio = $lecturaAnterior ? $lecturaAnterior->anio : $request->anio;
-        $ciclo = $lecturaAnterior ? $lecturaAnterior->ciclo : 0;
-        if ($ciclo < 6) {
-            $ciclo = $ciclo + 1;
-        } else {
-            $ciclo = 1;
-            $anio = $anio + 1;
-        }
-
-        $consumo = $request->lectura_actual - $lectura_anterior;
-
-        \App\Models\Lectura::create([
-            'matricula' => $request->matricula,
-            'numero_serie' => $request->numero_serie,
-            'anio' => $anio,
-            'ciclo' => $ciclo,
-            'fecha' => $request->fecha,
-            'lectura_actual' => $request->lectura_actual,
-            'lectura_anterior' => $lectura_anterior,
-            'consumo_m3' => $consumo,
+        return response()->json([
+            'anio' => $lectura ? $lectura->anio : null,
+            'ciclo' => $lectura ? $lectura->ciclo : null,
+            'lectura_actual' => $lectura ? $lectura->lectura_actual : 0,
+            'fecha' => $lectura ? $lectura->fecha : null,
         ]);
+    }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'usuario_id' => 'required|exists:usuarios,id',
+            'medidor_id' => 'required|exists:medidors,id',
+            'fecha' => 'required|date',
+            'valor' => 'required|numeric|min:0',
+        ]);
+        Lectura::create($validated);
         return redirect()->route('lecturas.index')->with('success', 'Lectura registrada correctamente.');
     }
-    
+
     public function show($id)
     {
        $lectura = Lectura::findOrFail($id);   

@@ -8,27 +8,6 @@ use App\Models\Credito;
 
 class ClienteController extends Controller
 {
-    public function loginForm()
-    {
-        return view('cliente.login');
-    }
-
-    public function login(Request $request)
-    {
-        $request->validate([
-            'matricula' => 'required',
-            'documento' => 'required',
-        ]);
-        $usuario = Usuario::where('matricula', $request->matricula)
-            ->where('documento', $request->documento)
-            ->first();
-        if (!$usuario) {
-            return back()->withErrors(['matricula' => 'Datos incorrectos'])->withInput();
-        }
-        session(['cliente_id' => $usuario->id]);
-        return redirect()->route('cliente.panel');
-    }
-
     public function panel()
     {
         $usuario = Usuario::find(session('cliente_id'));
@@ -38,19 +17,14 @@ class ClienteController extends Controller
         return view('cliente.panel', compact('usuario', 'lecturas', 'creditos'));
     }
 
-    public function logout()
-    {
-        session()->forget('cliente_id');
-        return redirect()->route('cliente.login');
-    }
-
-    public function descargarFactura($lecturaId)
+    public function descargarFactura($lecturaId, $matricula, $documento)
     {
         $lectura = \App\Models\Lectura::findOrFail($lecturaId);
-        $usuario = \App\Models\Usuario::where('matricula', $lectura->matricula)->first();
-        // Solo permitir si el usuario autenticado es dueño de la factura
-        if (session('cliente_id') != $usuario->id) {
-            abort(403);
+        $usuario = \App\Models\Usuario::where('matricula', $matricula)
+            ->where('documento', $documento)
+            ->first();
+        if (!$usuario || $lectura->matricula !== $usuario->matricula) {
+            abort(403, 'No autorizado.');
         }
         $precios = \App\Models\Tarifa::where('anio', $lectura->anio)->first();
         $anio = $lectura->anio;
@@ -71,12 +45,14 @@ class ClienteController extends Controller
         return $pdf->download('factura_'.$lectura->anio.'_ciclo_'.$lectura->ciclo.'.pdf');
     }
 
-    public function verFactura($lecturaId)
+    public function verFactura($lecturaId, $matricula, $documento)
     {
         $lectura = \App\Models\Lectura::findOrFail($lecturaId);
-        $usuario = \App\Models\Usuario::where('matricula', $lectura->matricula)->first();
-        if (session('cliente_id') != $usuario->id) {
-            abort(403);
+        $usuario = \App\Models\Usuario::where('matricula', $matricula)
+            ->where('documento', $documento)
+            ->first();
+        if (!$usuario || $lectura->matricula !== $usuario->matricula) {
+            abort(403, 'No autorizado.');
         }
         $precios = \App\Models\Tarifa::where('anio', $lectura->anio)->first();
         // Cálculo de valores según tarifa
@@ -99,5 +75,29 @@ class ClienteController extends Controller
         $ultimas = \App\Models\Lectura::where('matricula', $lectura->matricula)
             ->orderByDesc('anio')->orderByDesc('ciclo')->limit(3)->get()->reverse();
         return view('cliente.factura_masiva', compact('lectura', 'usuario', 'precios', 'consumo_valor', 'cargo_fijo', 'otros_cargos', 'valor_factura', 'ultimas'));
+    }
+
+    // Consulta pública de factura por matrícula y cédula
+    public function consultaFacturaForm()
+    {
+        return view('cliente.consulta_factura');
+    }
+
+    public function consultaFactura(Request $request)
+    {
+        $request->validate([
+            'matricula' => 'required',
+            'documento' => 'required',
+        ]);
+        $usuario = \App\Models\Usuario::where('matricula', $request->matricula)
+            ->where('documento', $request->documento)
+            ->first();
+        if (!$usuario) {
+            return back()->withErrors(['matricula' => 'Datos incorrectos'])->withInput();
+        }
+        $lecturas = \App\Models\Lectura::where('matricula', $usuario->matricula)
+            ->orderByDesc('anio')->orderByDesc('ciclo')->get();
+        $creditos = \App\Models\Credito::where('usuario_id', $usuario->id)->orderByDesc('fecha')->get();
+        return view('cliente.panel', compact('usuario', 'lecturas', 'creditos'));
     }
 }

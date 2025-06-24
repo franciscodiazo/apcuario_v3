@@ -8,18 +8,18 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LecturaMasivaController;
 use App\Http\Controllers\ReporteController;
 
-// Rutas para lecturas en modo móvil (deben ir antes de resource para evitar conflictos)
-Route::match(['get', 'post'], 'lecturas/movil', [LecturaController::class, 'movil'])->name('lecturas.movil');
-Route::post('lecturas/movil/store', [LecturaController::class, 'movilStore'])->name('lecturas.movil.store');
+// Seguridad: Rutas protegidas y control de acceso
+Route::get('/', function () {
+    return view('welcome');
+});
 
-// Rutas públicas para login cliente
-Route::get('/cliente/login', [App\Http\Controllers\ClienteController::class, 'loginForm'])->name('cliente.login');
-Route::post('/cliente/login', [App\Http\Controllers\ClienteController::class, 'login']);
-
-// Rutas de autenticación estándar (admin/operador)
 Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+
+// Rutas para lecturas en modo móvil (deben ir antes de resource para evitar conflictos)
+Route::match(['get', 'post'], 'lecturas/movil', [LecturaController::class, 'movil'])->name('lecturas.movil');
+Route::post('lecturas/movil/store', [LecturaController::class, 'movilStore'])->name('lecturas.movil.store');
 
 // Ruta principal: redirige según autenticación y rol
 Route::match(['get', 'head'], '/', function () {
@@ -88,6 +88,9 @@ Route::middleware(['auth'])->group(function () {
 
 // Rutas de consulta cliente (sin autenticación)
 Route::get('/cliente/panel', [App\Http\Controllers\ClienteController::class, 'panel'])->name('cliente.panel');
-Route::post('/cliente/logout', [App\Http\Controllers\ClienteController::class, 'logout'])->name('cliente.logout');
-Route::get('/cliente/factura/{lecturaId}/pdf', [App\Http\Controllers\ClienteController::class, 'descargarFactura'])->name('cliente.factura.pdf');
-Route::get('/cliente/factura/{lecturaId}/ver', [App\Http\Controllers\ClienteController::class, 'verFactura'])->name('cliente.factura.ver');
+Route::get('/cliente/factura/{lecturaId}/ver/{matricula}/{documento}', [App\Http\Controllers\ClienteController::class, 'verFactura'])->name('cliente.factura.ver');
+Route::get('/cliente/factura/{lecturaId}/pdf/{matricula}/{documento}', [App\Http\Controllers\ClienteController::class, 'descargarFactura'])->name('cliente.factura.pdf');
+
+// Consulta pública de factura por matrícula y cédula
+Route::get('/consulta-factura', [App\Http\Controllers\ClienteController::class, 'consultaFacturaForm'])->name('consulta.factura.form');
+Route::post('/consulta-factura', [App\Http\Controllers\ClienteController::class, 'consultaFactura'])->name('consulta.factura');

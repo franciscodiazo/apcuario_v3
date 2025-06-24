@@ -4,11 +4,21 @@ namespace App\Http\Controllers;
 use App\Models\Credito;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CreditoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
     {
+        $user = Auth::user();
+        if (!$user || !($user->roles->contains('name', 'admin') || $user->roles->contains('name', 'operador'))) {
+            abort(403, 'No autorizado.');
+        }
         $matricula = $request->input('matricula');
         $usuario = null;
         if ($matricula) {
@@ -23,26 +33,13 @@ class CreditoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'usuario_id' => 'required|exists:usuarios,id',
-            'matricula' => 'required',
-            'valor' => 'required|numeric|min:1',
+            'monto' => 'required|numeric|min:0',
             'fecha' => 'required|date',
-            'acuerdo' => 'required|string',
-            'detalle' => 'required|string',
         ]);
-        $credito = Credito::create([
-            'usuario_id' => $request->usuario_id,
-            'matricula' => $request->matricula,
-            'valor' => $request->valor,
-            'saldo' => $request->valor,
-            'estado' => 'pendiente',
-            'fecha' => $request->fecha,
-            'acuerdo' => $request->acuerdo,
-            'detalle' => $request->detalle,
-        ]);
-        return redirect()->route('creditos.index', ['matricula' => $request->matricula])
-            ->with('success', 'Crédito registrado correctamente.');
+        Credito::create($validated);
+        return redirect()->route('creditos.index')->with('success', 'Crédito registrado correctamente.');
     }
 
     public function abonar(Request $request, $id)

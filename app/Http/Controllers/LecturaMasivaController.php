@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Usuario;
 use App\Models\Lectura;
 use Illuminate\Http\Request;
-use App\Http\Controllers\LecturaMasivaController;
+use Illuminate\Support\Facades\Auth;
 
 class LecturaMasivaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
 
     public function index()
     {
+        $user = Auth::user();
+        if (!$user || !($user->roles->contains('name', 'admin') || $user->roles->contains('name', 'operador'))) {
+            abort(403, 'No autorizado.');
+        }
         $usuarios = Usuario::with('matricula')->get();
         return view('lecturas.masiva.index', compact('usuarios'));
     }

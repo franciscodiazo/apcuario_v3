@@ -4,11 +4,21 @@ namespace App\Http\Controllers;
 use App\Models\Lectura;
 use App\Models\Precio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ConsumoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
     {
+        $user = Auth::user();
+        if (!$user || !($user->roles->contains('name', 'admin') || $user->roles->contains('name', 'operador'))) {
+            abort(403, 'No autorizado.');
+        }
         $anio = $request->input('anio', date('Y'));
         $ciclo = $request->input('ciclo');
         $estado = $request->input('estado');

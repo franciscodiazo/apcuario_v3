@@ -5,6 +5,7 @@
     $valor_factura = ($precios->basico ?? 0) + ($adicionales * ($precios->adicional_m3 ?? 0));
     $saldo = max(0, $lectura->usuario->creditos()->where('saldo', '>', 0)->sum('saldo') ?? 0);
 @endphp
+{{-- Botón superior único para descargar PDF --}}
 <div class="flex justify-center my-4 no-print">
     <button id="descargar-pdf" class="flex items-center gap-2 px-8 py-3 rounded-xl bg-green-700 text-white font-bold hover:bg-green-900 transition text-base focus:outline-none focus:ring-2 focus:ring-green-400">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -179,16 +180,54 @@
         </div>
     </div>
 </div>
-<div class="flex justify-center my-4 no-print">
-    <button id="descargar-pdf-masivo" class="flex items-center gap-2 px-8 py-3 rounded-xl bg-green-700 text-white font-bold hover:bg-green-900 transition text-base focus:outline-none focus:ring-2 focus:ring-green-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-        Descargar PDF Masivo
-    </button>
-    <button id="descargar-factura" class="flex items-center gap-2 px-8 py-3 rounded-xl bg-blue-700 text-white font-bold hover:bg-blue-900 transition text-base focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-        Descargar factura
-    </button>
+{{-- INFORMACIÓN LEGAL Y DESPRENDIBLE --}}
+<div class="px-10 pb-4">
+    <div class="mt-2 text-[11px] text-gray-700 bg-blue-50 rounded p-2">
+        <div><span class="font-bold">Nota:</span> El no pago oportuno de esta factura puede generar suspensión del servicio y cobro de intereses de mora. Consulte sus derechos y deberes en www.acuarius.com/legal.</div>
+        <div><span class="font-bold">Subsidios y contribuciones:</span> Según Ley 142/94, los estratos 1, 2 y 3 pueden recibir subsidios, y los estratos 5 y 6 pagan contribuciones.</div>
+    </div>
 </div>
+{{-- DESPRENDIBLE DE PAGO --}}
+<div class="px-10 pb-8">
+    <div class="mt-8 border-t border-dashed border-gray-400 pt-3 flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+            <div class="text-xs font-bold">Desprendible para pago en bancos o corresponsales <span class="ml-2 text-gray-400">&#9986;</span></div>
+            <div class="text-xs">Factura N°: {{ $lectura->id }}</div>
+        </div>
+        <div class="flex justify-between items-center mt-1">
+            <div class="text-xs">Cliente: <span class="font-bold">{{ $lectura->usuario->nombres ?? '' }} {{ $lectura->usuario->apellidos ?? '' }}</span></div>
+            <div class="text-xs">Valor: <span class="font-bold text-coral-700">${{ number_format($valor_factura, 0) }}</span></div>
+            <div class="text-xs">Fecha límite: <span class="font-bold text-red-600">{{ now()->addDays(15)->format('Y-m-d') }}</span></div>
+            <div class="w-16 h-8 bg-gray-200 flex items-center justify-center rounded">
+                <span class="text-xs text-blue-400">QR</span>
+            </div>
+        </div>
+    </div>
+</div>
+{{-- DESPRENDIBLE DE PAGO INFERIOR --}}
+<div class="mt-8 pt-3 border-t border-dashed border-gray-400 flex flex-col gap-2" style="position: absolute; left: 0; right: 0; bottom: 0; width: 100%; background: #fff; padding: 0.7cm 0.7cm 0.7cm 0.7cm;">
+    <div class="flex items-center gap-2 mb-1">
+        <span class="text-gray-400 text-lg">&#9986;</span>
+        <span class="text-xs text-gray-500">Desprendible para pago en bancos o corresponsales</span>
+    </div>
+    <div class="flex flex-wrap justify-between items-center text-xs font-medium gap-2">
+        <div>Factura N°: <span class="font-bold">{{ $lectura->id }}</span></div>
+        <div>Cliente: <span class="font-bold">{{ $lectura->usuario->nombres ?? '' }} {{ $lectura->usuario->apellidos ?? '' }}</span></div>
+        <div>CC/NIT: <span class="font-bold">{{ $lectura->usuario->documento ?? '---' }}</span></div>
+        <div>Dirección: <span class="font-bold">{{ $lectura->usuario->direccion ?? '' }}</span></div>
+        <div>Estrato: <span class="font-bold">{{ $lectura->usuario->estrato ?? 'No aplica' }}</span></div>
+        <div>N° Cuenta/Contrato: <span class="font-bold">{{ $lectura->matricula ?? '' }}</span></div>
+        <div>Consumo: <span class="font-bold">{{ $lectura->consumo_m3 ?? 0 }} m³</span></div>
+        <div>Lectura anterior: <span class="font-bold">{{ $lectura->lectura_anterior ?? '-' }}</span></div>
+        <div>Lectura actual: <span class="font-bold">{{ $lectura->lectura_actual ?? '-' }}</span></div>
+        <div>Valor: <span class="font-bold text-coral-700">${{ number_format($valor_factura, 0) }}</span></div>
+        <div>Fecha límite: <span class="font-bold text-red-600">{{ now()->addDays(15)->format('Y-m-d') }}</span></div>
+        <div class="w-12 h-12 bg-gray-200 flex items-center justify-center rounded ml-2">
+            <span class="text-xs text-blue-400">QR</span>
+        </div>
+    </div>
+</div>
+<div class="my-4"></div>
 @auth
     @php $user = Auth::user(); @endphp
     @if($user && ($user->hasRole('admin') || $user->hasRole('operador'))
@@ -263,39 +302,6 @@
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, backgroundColor: null },
             jsPDF:        { unit: 'cm', format: 'letter', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    });
-    document.getElementById('descargar-pdf-masivo').addEventListener('click', function() {
-        const element = document.getElementById('area-masiva-pdf');
-        const opt = {
-            margin:       [0, 0],
-            filename:     'facturas_masivas.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: null },
-            jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    });
-    document.getElementById('descargar-factura').addEventListener('click', function() {
-        const element = document.getElementById('factura-carta-pdf');
-        const opt = {
-            margin:       [0, 0],
-            filename:     'factura_{{ $lectura->id ?? 'descarga' }}.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: null },
-            jsPDF:        { unit: 'cm', format: 'letter', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    });
-    document.getElementById('exportar-masivo').addEventListener('click', function() {
-        const element = document.getElementById('area-masiva-pdf');
-        const opt = {
-            margin:       [0, 0],
-            filename:     'facturas_masivas.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: null },
-            jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
         };
         html2pdf().set(opt).from(element).save();
     });

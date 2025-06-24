@@ -88,6 +88,10 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-body text-aquarius-900 bg-gradient-to-br from-aquarius-50 to-sand-50">
+    {{-- Seguridad: Prevenir clickjacking --}} 
+    <script>
+      if (window.top !== window.self) { window.top.location = window.self.location; }
+    </script>
     <div x-data="{ open: true }" class="flex min-h-screen">
         <!-- Sidebar -->
         <aside :class="open ? 'w-64' : 'w-16'" class="transition-all duration-300 bg-aquarius-800 text-white flex flex-col shadow-lg z-30">
@@ -101,7 +105,8 @@
             <div class="flex-1 flex flex-col gap-2 mt-4" x-show="open">
                 @auth
                     @php $user = Auth::user(); @endphp
-                    <div class="px-4 py-2 text-xs bg-aquarius-900/80 rounded mb-2">{{ $user->name ?? $user->email ?? 'Usuario' }}<br><span class="text-aquarius-200">({{ $user->roles->pluck('name')->implode(', ') }})</span></div>
+                    {{-- Seguridad: No mostrar datos sensibles --}}
+                    <div class="px-4 py-2 text-xs bg-aquarius-900/80 rounded mb-2">{{ $user->name ? e($user->name) : (e($user->email) ?? 'Usuario') }}<br><span class="text-aquarius-200">({{ e($user->roles->pluck('name')->implode(', ')) }})</span></div>
                     @if(method_exists($user, 'hasRole') && ($user->hasRole('admin') || $user->hasRole('operador')))
                         <a href="{{ route('dashboard') }}" class="block px-4 py-2 rounded transition hover:bg-aquarius-600 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6'/></svg>Dashboard</a>
                         <a href="{{ route('usuarios.index') }}" class="block px-4 py-2 rounded transition hover:bg-aquarius-600 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg>Usuarios</a>
@@ -122,7 +127,14 @@
                         <a href="{{ route('cliente.factura.ver', ['lecturaId' => 1]) }}" class="block px-4 py-2 rounded transition hover:bg-coral-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h6a2 2 0 002-2V7a2 2 0 00-2-2h-2l-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2z'/></svg>Mis Facturas</a>
                     @endif
                 @else
-                    <a href="{{ route('cliente.login') }}" class="block px-4 py-2 rounded transition hover:bg-yellow-700 flex items-center gap-2"><svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5 12h14M12 5l7 7-7 7'/></svg>Consulta cliente</a>
+                    <a href="{{ route('login') }}" class="block px-4 py-2 rounded transition hover:bg-blue-700 flex items-center gap-2">
+                        <svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5 12h14M12 5l7 7-7 7'/></svg>
+                        Iniciar sesión
+                    </a>
+                    <a href="{{ route('consulta.factura.form') }}" class="block px-4 py-2 rounded transition hover:bg-yellow-700 flex items-center gap-2">
+                        <svg class='w-5 h-5' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5 12h14M12 5l7 7-7 7'/></svg>
+                        Consulta cliente
+                    </a>
                 @endauth
             </div>
         </aside>
@@ -132,7 +144,7 @@
             <nav class="w-full flex items-center justify-end bg-white/80 px-6 py-3 shadow-sm border-b border-aquarius-100">
                 @auth
                     @php $user = Auth::user(); @endphp
-                    <span class="mr-4 font-bold text-aquarius-900">{{ $user->name ?? $user->email ?? 'Usuario' }} ({{ $user->roles->pluck('name')->implode(', ') }})</span>
+                    <span class="mr-4 font-bold text-aquarius-900">{{ $user->name ? e($user->name) : (e($user->email) ?? 'Usuario') }} ({{ e($user->roles->pluck('name')->implode(', ')) }})</span>
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition">Salir</button>
@@ -141,6 +153,13 @@
             </nav>
             <main class="flex-1 flex justify-center items-start py-10 px-2 bg-transparent">
                 <div class="w-full max-w-5xl glass p-8 shadow-xl border border-aquarius-100">
+                    {{-- Seguridad: Mensajes de error y éxito --}}
+                    @if(session('success'))
+                        <div class="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-200">{{ e(session('success')) }}</div>
+                    @endif
+                    @if(session('error'))
+                        <div class="mb-4 p-3 rounded bg-red-100 text-red-800 border border-red-200">{{ e(session('error')) }}</div>
+                    @endif
                     @yield('content')
                 </div>
             </main>

@@ -1,17 +1,24 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\Tarifa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Tarifa;
 
 class TarifaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        $tarifas = \App\Models\Tarifa::orderByDesc('anio')->get();
-        if ($tarifas->isEmpty()) {
-            return redirect()->route('tarifas.create')->with('info', 'Primero debe registrar una tarifa.');
+        $user = Auth::user();
+        if (!$user || !($user->roles->contains('name', 'admin') || $user->roles->contains('name', 'operador'))) {
+            abort(403, 'No autorizado.');
         }
+        $tarifas = Tarifa::paginate(20);
         return view('tarifas.index', compact('tarifas'));
     }
 
@@ -22,13 +29,12 @@ class TarifaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'anio' => 'required|integer|min:2000|max:2100|unique:tarifas,anio',
-            'basico' => 'required|integer|min:0',
-            'adicional_m3' => 'required|integer|min:0',
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'valor' => 'required|numeric|min:0',
         ]);
-        Tarifa::create($request->only(['anio','basico','adicional_m3']));
-        return redirect()->route('tarifas.index')->with('success','Tarifa registrada correctamente.');
+        Tarifa::create($validated);
+        return redirect()->route('tarifas.index')->with('success', 'Tarifa registrada correctamente.');
     }
 
     public function edit($id)

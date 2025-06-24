@@ -2,24 +2,33 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Usuario extends Model
+class Usuario extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
+    // Seguridad: Solo permitir asignación masiva de campos seguros
     protected $fillable = [
-        'matricula',
-        'documento',
-        'apellidos',
-        'nombres',
-        'correo',
-        'estrato',
-        'celular',
-        'sector',
-        'no_personas',
-        'direccion',
+        'name', 'email', 'password', 'telefono', 'direccion', 'estado', 'rol_id',
     ];
+
+    // Seguridad: Ocultar atributos sensibles
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    // Seguridad: Cast de atributos
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    // Relación con roles
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class);
+    }
 
     public function medidores()
     {
